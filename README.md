@@ -97,7 +97,7 @@ No filesystem cleaner can guarantee that a file is safe to remove merely because
 | Windows 7 SP1 | x86 and x64 | Legacy target; requires a compatible legacy Python runtime and real-device testing |
 | Windows 8 | x86 and x64 | Target; requires real-device testing |
 | Windows 8.1 | x86 and x64 | Target; Python 3.12 runtime; requires real-device testing |
-| Windows 10 | x86 and x64 | Target; maintained-runtime CI coverage is x64; x86 requires real-device testing |
+| Windows 10 | x86 and x64 | Target; hosted CI exercises Python 3.12 on x86/x64 and 3.14 on x64, but does not run Windows 10 itself |
 | Windows 11 | x64 | Target; CI coverage is limited to hosted Windows runners |
 
 Windows 11 does not have an officially supported 32-bit x86 edition. ARM64 is not currently claimed as a validated target. GitHub-hosted CI does not run Windows 7, Windows 8, or Windows 8.1; compatibility with those systems and Windows x86 configurations must be verified on dedicated test machines before a release is described as certified.
