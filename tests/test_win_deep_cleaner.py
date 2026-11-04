@@ -15,6 +15,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import win_deep_cleaner as cleaner  # noqa: E402
+import gui as gui_module  # noqa: E402
 
 
 class PlatformDetectionTests(unittest.TestCase):
@@ -178,6 +179,22 @@ class CleanerUtilityTests(unittest.TestCase):
     def test_invalid_age_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             cleaner.scan(0)
+
+
+class SessionLoggingTests(unittest.TestCase):
+    def test_log_record_contains_active_session_id(self) -> None:
+        token = cleaner.SESSION_ID.set("session-test-123")
+        try:
+            record = cleaner.logging.LogRecord(
+                "test", cleaner.logging.INFO, __file__, 1, "message", (), None
+            )
+            cleaner.SessionIdFilter().filter(record)
+            self.assertEqual(record.session_id, "session-test-123")
+        finally:
+            cleaner.SESSION_ID.reset(token)
+
+    def test_gui_entry_point_is_in_separate_module(self) -> None:
+        self.assertTrue(callable(gui_module.run_gui))
 
 
 if __name__ == "__main__":
