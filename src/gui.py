@@ -83,7 +83,8 @@ def run_gui() -> int:
         task: Callable[..., Any],
         *args: Any,
     ) -> None:
-        set_busy(True, "Scanning... The window remains responsive.")
+        activity = "Scanning" if task_name == "scan" else "Cleaning"
+        set_busy(True, "{}... The window remains responsive.".format(activity))
         def worker() -> None:
             try:
                 results.put((task_name, True, task(*args)))
