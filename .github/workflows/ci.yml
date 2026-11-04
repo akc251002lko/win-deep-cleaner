@@ -20,6 +20,8 @@ jobs:
           - python-version: "3.8"
             architecture: x64
           - python-version: "3.12"
+            architecture: x86
+          - python-version: "3.12"
             architecture: x64
           - python-version: "3.14"
             architecture: x64
