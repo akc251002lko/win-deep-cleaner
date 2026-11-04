@@ -55,8 +55,20 @@ def run_gui() -> int:
     age_entry = tk.Entry(root, textvariable=age_var, width=10, justify="center")
     age_entry.pack()
 
-    output = tk.Text(root, height=9, width=64, state="disabled", wrap="word")
-    output.pack(fill="both", expand=True, padx=14, pady=12)
+    log_frame = tk.Frame(root)
+    log_frame.pack(fill="both", expand=True, padx=14, pady=12)
+    output = tk.Text(
+        log_frame,
+        height=9,
+        width=64,
+        state="disabled",
+        wrap="word",
+        takefocus=True,
+    )
+    scrollbar = tk.Scrollbar(log_frame, orient="vertical", command=output.yview)
+    output.configure(yscrollcommand=scrollbar.set)
+    output.pack(side="left", fill="both", expand=True)
+    scrollbar.pack(side="right", fill="y")
 
     status = tk.Label(root, text="Ready. Scanning is read-only; cleanup requires confirmation.")
     status.pack(pady=(0, 6))
@@ -221,5 +233,6 @@ def run_gui() -> int:
         root.destroy()
 
     root.protocol("WM_DELETE_WINDOW", close_window)
+    age_entry.focus_set()
     root.mainloop()
     return 0
