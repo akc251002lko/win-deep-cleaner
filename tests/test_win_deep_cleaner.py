@@ -176,6 +176,22 @@ class CleanerUtilityTests(unittest.TestCase):
             self.assertEqual(result.files_deleted, 0)
             self.assertTrue(candidate.exists())
 
+    def test_clean_candidates_deletes_only_the_confirmed_snapshot(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            confirmed = root / "confirmed.tmp"
+            unrelated = root / "not-in-preview.tmp"
+            confirmed.write_text("approved", encoding="utf-8")
+            unrelated.write_text("leave untouched", encoding="utf-8")
+            original = confirmed.lstat()
+            snapshot = cleaner.ScanResult(files_found=1, bytes_found=8)
+            with mock.patch.object(cleaner, "scan", side_effect=AssertionError("must not rescan")):
+                result = cleaner.clean_candidates(snapshot, [(confirmed, original)], True)
+            self.assertEqual(result.files_deleted, 1)
+            self.assertEqual(result.bytes_deleted, 8)
+            self.assertFalse(confirmed.exists())
+            self.assertTrue(unrelated.exists())
+
     def test_clean_candidates_refuses_incomplete_destructive_scan(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             candidate = Path(temp_dir) / "must-survive.tmp"
