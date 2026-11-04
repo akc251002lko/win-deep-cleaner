@@ -345,9 +345,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     session_token = SESSION_ID.set(uuid.uuid4().hex[:12])
-    parser = build_parser()
-    args = parser.parse_args(argv)
     try:
+        parser = build_parser()
+        args = parser.parse_args(argv)
         info = detect_platform()
         LOGGER.info(
             "Starting on %s %s (%s), Python %s",
