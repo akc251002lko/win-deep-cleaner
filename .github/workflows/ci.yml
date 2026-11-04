@@ -1,0 +1,43 @@
+name: Windows CI
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    name: Python ${{ matrix.python-version }} / ${{ matrix.architecture }}
+    runs-on: windows-2022
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - python-version: "3.8"
+            architecture: x86
+          - python-version: "3.8"
+            architecture: x64
+          - python-version: "3.10"
+            architecture: x86
+          - python-version: "3.10"
+            architecture: x64
+          - python-version: "3.12"
+            architecture: x64
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: ${{ matrix.architecture }}
+
+      - name: Compile source and tests
+        run: python -m compileall -q src tests
+
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -v
