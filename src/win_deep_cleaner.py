@@ -262,16 +262,30 @@ def _still_same_file(path: Path, original: os.stat_result) -> bool:
         return False
 
 
-def clean(age_hours: int, apply_changes: bool) -> CleanupResult:
-    scan_result, candidates = scan(age_hours)
+def clean_candidates(
+    scan_result: ScanResult,
+    candidates: Sequence[Tuple[Path, os.stat_result]],
+    apply_changes: bool,
+) -> CleanupResult:
+    """Process a previously scanned candidate snapshot.
+
+    The GUI uses this split-phase API to show the exact scan summary before
+    asking for destructive confirmation. Candidate metadata is revalidated
+    immediately before each deletion.
+    """
     result = CleanupResult(
         dry_run=not apply_changes,
+        files_considered=len(candidates),
         bytes_found=scan_result.bytes_found,
         files_skipped=scan_result.files_skipped,
         errors=scan_result.errors,
     )
+    if apply_changes and scan_result.errors:
+        raise CleanerError(
+            "Cleanup was stopped because the scan was incomplete. "
+            "Resolve the reported scan errors and scan again."
+        )
     for path, original in candidates:
-        result.files_considered += 1
         if not apply_changes:
             continue
         if not _still_same_file(path, original):
@@ -289,6 +303,11 @@ def clean(age_hours: int, apply_changes: bool) -> CleanupResult:
             result.errors += 1
             LOGGER.warning("Could not delete %s: %s", path, exc)
     return result
+
+
+def clean(age_hours: int, apply_changes: bool) -> CleanupResult:
+    scan_result, candidates = scan(age_hours)
+    return clean_candidates(scan_result, candidates, apply_changes)
 
 
 def write_report(result: CleanupResult, destination: Optional[str]) -> None:
