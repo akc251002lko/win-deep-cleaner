@@ -338,9 +338,10 @@ def run_gui() -> int:
                 return
             result = clean(hours, apply_changes)
             show(
-                "{}: considered {}; deleted {}; reclaimed {}; skipped {}; errors {}.".format(
+                "{}: considered {}; found {}; deleted {}; reclaimed {}; skipped {}; errors {}.".format(
                     "Cleanup" if apply_changes else "Dry run",
                     result.files_considered,
+                    format_bytes(result.bytes_found),
                     result.files_deleted,
                     format_bytes(result.bytes_deleted),
                     result.files_skipped,
@@ -406,9 +407,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         result = clean(args.age_hours, args.apply)
         write_report(result, args.report)
         print(
-            "{} | considered={} deleted={} reclaimed={} skipped={} errors={}".format(
+            "{} | considered={} found={} deleted={} reclaimed={} skipped={} errors={}".format(
                 "DRY RUN" if result.dry_run else "CLEANUP",
                 result.files_considered,
+                format_bytes(result.bytes_found),
                 result.files_deleted,
                 format_bytes(result.bytes_deleted),
                 result.files_skipped,
