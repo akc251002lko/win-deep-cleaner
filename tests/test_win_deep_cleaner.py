@@ -160,6 +160,21 @@ class CleanerUtilityTests(unittest.TestCase):
             self.assertEqual(result.files_considered, 1)
             self.assertTrue(candidate.exists())
 
+
+    def test_scan_counts_directory_walk_errors(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            denied = PermissionError("permission denied")
+            denied.filename = str(root / "blocked")
+            def failing_walk(*args, **kwargs):
+                kwargs["onerror"](denied)
+                return iter(())
+            with mock.patch.object(cleaner, "get_cleanup_roots", return_value=[root]):
+                with mock.patch.object(cleaner.os, "walk", side_effect=failing_walk):
+                    result, candidates = cleaner.scan(1)
+            self.assertEqual(result.errors, 1)
+            self.assertEqual(candidates, [])
+
     def test_invalid_age_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             cleaner.scan(0)
