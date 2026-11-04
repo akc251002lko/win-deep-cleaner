@@ -162,6 +162,30 @@ class CleanerUtilityTests(unittest.TestCase):
             self.assertTrue(candidate.exists())
 
 
+    def test_clean_candidates_uses_preview_snapshot_without_rescanning(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            candidate = Path(temp_dir) / "previewed.tmp"
+            candidate.write_text("preview only", encoding="utf-8")
+            original = candidate.lstat()
+            snapshot = cleaner.ScanResult(files_found=1, bytes_found=12)
+            with mock.patch.object(cleaner, "scan", side_effect=AssertionError("must not rescan")):
+                result = cleaner.clean_candidates(snapshot, [(candidate, original)], False)
+            self.assertTrue(result.dry_run)
+            self.assertEqual(result.files_considered, 1)
+            self.assertEqual(result.bytes_found, 12)
+            self.assertEqual(result.files_deleted, 0)
+            self.assertTrue(candidate.exists())
+
+    def test_clean_candidates_refuses_incomplete_destructive_scan(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            candidate = Path(temp_dir) / "must-survive.tmp"
+            candidate.write_text("keep this file", encoding="utf-8")
+            original = candidate.lstat()
+            snapshot = cleaner.ScanResult(files_found=1, bytes_found=14, errors=1)
+            with self.assertRaises(cleaner.CleanerError):
+                cleaner.clean_candidates(snapshot, [(candidate, original)], True)
+            self.assertTrue(candidate.exists())
+
     def test_scan_counts_directory_walk_errors(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)
