@@ -72,7 +72,7 @@ Launch the graphical interface:
 python src/win_deep_cleaner.py --gui
 ```
 
-Use **Scan / Dry Run** first. Select **Clean Now** only after reviewing the scope and confirming the deletion prompt.
+Use **Scan / Dry Run** first to review the eligible file count and total size. **Clean Now** performs the scan in a background worker, keeps the window responsive, and asks for confirmation using that exact scan summary before deleting anything. Files changed since the preview are skipped. Cleanup is blocked if the scan reports errors, because the full deletion scope cannot be verified.
 
 ## Safety Model
 
