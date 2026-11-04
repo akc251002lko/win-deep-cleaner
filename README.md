@@ -136,6 +136,14 @@ GitHub Actions runs these checks on a Windows runner across selected Python and 
 └── SECURITY.md
 ```
 
+## Roadmap
+
+- Expand automated tests for filesystem edge cases and Windows-specific behaviour.
+- Validate the compatibility matrix on dedicated Windows versions and architectures.
+- Improve scan summaries and reporting without expanding cleanup scope unsafely.
+- Add further cleanup categories only with explicit scope, safeguards, and tests.
+
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development and pull request guidance.
@@ -148,13 +156,6 @@ Please review [SECURITY.md](SECURITY.md) for safe-use guidance and vulnerability
 
 This project is licensed under the [MIT License](LICENSE).
 
-## Roadmap
+---
 
-- Expand automated tests for filesystem edge cases and Windows-specific behaviour.
-- Validate the compatibility matrix on dedicated Windows versions and architectures.
-- Improve scan summaries and reporting without expanding cleanup scope unsafely.
-- Add further cleanup categories only with explicit scope, safeguards, and tests.
-
-## Maintainer
-
-Maintained by [akc251002lko](https://github.com/akc251002lko).
+**Maintained by [Arun Kumar](https://github.com/akc251002lko).**
