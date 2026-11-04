@@ -130,6 +130,7 @@ GitHub Actions runs these checks on a Windows runner across selected Python and 
 ├── tests/
 │   └── test_win_deep_cleaner.py
 ├── .gitignore
+├── LICENSE
 ├── README.md
 └── SECURITY.md
 ```
@@ -141,6 +142,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development and pull request guidance
 ## Security
 
 Please review [SECURITY.md](SECURITY.md) for safe-use guidance and vulnerability reporting.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
 
 ## Telegram Community
 
