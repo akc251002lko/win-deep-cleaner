@@ -11,6 +11,8 @@ jobs:
   test:
     name: Python ${{ matrix.python-version }} / ${{ matrix.architecture }}
     runs-on: windows-2022
+    env:
+      PYTHONPATH: src
     strategy:
       fail-fast: false
       matrix:
