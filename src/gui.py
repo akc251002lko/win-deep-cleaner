@@ -131,19 +131,15 @@ def run_gui() -> int:
 
         if task_name == "scan":
             scan_result, candidates, age_hours, apply_changes = payload
-            preview = (
+            show(
                 "Preview — {} eligible file(s), {} total, older than {} hour(s).".format(
                     len(candidates), format_bytes(scan_result.bytes_found), age_hours
                 )
             )
-            show(preview)
 
             if scan_result.errors:
                 dry_result = clean_candidates(scan_result, candidates, False)
                 render_result(dry_result)
-                status.configure(
-                    text="Cleanup blocked: the scan was incomplete; no files were deleted."
-                )
                 messagebox.showwarning(
                     "Incomplete scan",
                     "The scan reported {} error(s). Cleanup is disabled because the "
@@ -161,7 +157,7 @@ def run_gui() -> int:
 
             confirmed = messagebox.askyesno(
                 "Confirm cleanup",
-                "The scan found {} eligible file(s) totaling {} older than {} hour(s).\n\n"
+                "The scan found {} eligible file(s) totaling {} older than {} hour(s).\\n\\n"
                 "Permanently delete only these reviewed files? Files changed since the scan "
                 "will be skipped.".format(
                     len(candidates), format_bytes(scan_result.bytes_found), age_hours
@@ -183,47 +179,22 @@ def run_gui() -> int:
         set_busy(False, "Unexpected task result.")
         LOGGER.error("Unknown GUI background task: %s", task_name)
 
+    def scan_for_gui(age_hours: int, apply_changes: bool) -> Any:
+        scan_result, candidates = scan(age_hours)
+        return scan_result, candidates, age_hours, apply_changes
+
     def execute(apply_changes: bool) -> None:
         try:
             hours = int(age_var.get().strip())
             if hours < 1:
-                raise ValueError("Enter a number of hours greater than zero.")
-        except ValueError as exc:
+                raise ValueError
+        except ValueError:
             messagebox.showerror(
                 "Invalid age threshold",
-                str(exc) if str(exc) else "Enter a whole number of hours greater than zero.",
+                "Enter a whole number of hours greater than zero.",
             )
             return
-        start_task("scan", scan, hours)
-        # Preserve the requested action alongside the scan result without
-        # sharing Tk widgets with the worker thread.
-        original_scan = scan
-        def scan_for_requested_action(age_hours: int) -> Any:
-            return original_scan(age_hours)
-        # Replace the queued task payload when the scan completes via the
-        # action flag captured in the worker result.
-        state["apply_changes"] = apply_changes
-
-    # The scan worker returns only scan data. The action flag is retained in
-    # state and read by the main-thread result handler.
-    original_poll_results = poll_results
-    def poll_results_with_action() -> None:
-        try:
-            task_name, succeeded, payload = results.get_nowait()
-        except queue.Empty:
-            if state["busy"]:
-                root.after(100, poll_results_with_action)
-            return
-        if succeeded and task_name == "scan":
-            payload = (payload[0], payload[1], int(age_var.get()), state.get("apply_changes", False))
-            results.put((task_name, True, payload))
-            original_poll_results()
-            return
-        results.put((task_name, succeeded, payload))
-        original_poll_results()
-
-    # Route all polling through the action-aware main-thread adapter.
-    poll_results = poll_results_with_action  # type: ignore[assignment]
+        start_task("scan", scan_for_gui, hours, apply_changes)
 
     controls = tk.Frame(root)
     controls.pack(pady=(0, 14))
