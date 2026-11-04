@@ -20,7 +20,6 @@ except ImportError:
         CleanerError,
         DEFAULT_AGE_HOURS,
         LOGGER,
-        ScanResult,
         clean_candidates,
         detect_platform,
         format_bytes,
@@ -156,7 +155,7 @@ def run_gui() -> int:
 
             confirmed = messagebox.askyesno(
                 "Confirm cleanup",
-                "The scan found {} eligible file(s) totaling {} older than {} hour(s).\\n\\n"
+                "The scan found {} eligible file(s) totaling {} older than {} hour(s).\n\n"
                 "Permanently delete only these reviewed files? Files changed since the scan "
                 "will be skipped.".format(
                     len(candidates), format_bytes(scan_result.bytes_found), age_hours
