@@ -10,7 +10,6 @@ try:
         CleanerError,
         DEFAULT_AGE_HOURS,
         LOGGER,
-        ScanResult,
         clean_candidates,
         detect_platform,
         format_bytes,
