@@ -147,10 +147,6 @@ Please review [SECURITY.md](SECURITY.md) for safe-use guidance and vulnerability
 
 This project is licensed under the [MIT License](LICENSE).
 
-## Telegram Community
-
-For project announcements, repository updates, technical discussions, questions, and collaboration, join the [Telegram community](https://t.me/githubakc251002lko).
-
 ## Roadmap
 
 - Expand automated tests for filesystem edge cases and Windows-specific behaviour.
