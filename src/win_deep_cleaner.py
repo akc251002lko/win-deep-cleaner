@@ -8,7 +8,6 @@ directories are considered; directories and system locations are never removed.
 from __future__ import annotations
 
 import argparse
-import ctypes
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -51,6 +50,7 @@ class ScanResult:
 class CleanupResult:
     dry_run: bool
     files_considered: int = 0
+    bytes_found: int = 0
     files_deleted: int = 0
     bytes_deleted: int = 0
     files_skipped: int = 0
@@ -117,7 +117,15 @@ def detect_platform() -> Dict[str, str]:
 
 
 def get_cleanup_roots() -> List[Path]:
-    """Return only user-scoped TEMP/TMP roots, deduplicated and resolved."""
+    """Return deduplicated TEMP/TMP folders strictly inside the user profile."""
+    profile_value = os.environ.get("USERPROFILE")
+    if not profile_value:
+        raise CleanerError("USERPROFILE is unavailable; refusing to guess cleanup scope.")
+    try:
+        profile = Path(profile_value).expanduser().resolve()
+    except (OSError, RuntimeError) as exc:
+        raise CleanerError("The current user profile could not be resolved.") from exc
+
     candidates = [
         os.environ.get("TEMP"),
         os.environ.get("TMP"),
@@ -125,17 +133,36 @@ def get_cleanup_roots() -> List[Path]:
     ]
     roots: List[Path] = []
     seen = set()
+    profile_key = os.path.normcase(str(profile))
     for candidate in candidates:
         if not candidate:
             continue
         try:
             path = Path(candidate).expanduser().resolve()
-            key = os.path.normcase(str(path))
-            if path.is_dir() and key not in seen:
-                seen.add(key)
+            path_key = os.path.normcase(str(path))
+            try:
+                common = os.path.commonpath([profile_key, path_key])
+            except ValueError:
+                common = ""
+            # Never scan a profile root, a drive root, a system temp folder,
+            # or an arbitrary user folder merely because TEMP was redirected.
+            folder_name = path.name.lower()
+            if (
+                os.path.normcase(common) != profile_key
+                or path_key == profile_key
+                or not (folder_name in ("temp", "tmp") or folder_name.startswith("tmp"))
+                or not path.is_dir()
+                or is_reparse_point(path)
+            ):
+                LOGGER.warning("Ignoring unsafe or inaccessible temporary directory: %s", candidate)
+                continue
+            if path_key not in seen:
+                seen.add(path_key)
                 roots.append(path)
         except (OSError, RuntimeError):
             LOGGER.warning("Ignoring inaccessible temporary directory: %s", candidate)
+    if not roots:
+        raise CleanerError("No safe user-profile TEMP/TMP directory was found.")
     return roots
 
 
@@ -213,8 +240,13 @@ def _still_same_file(path: Path, original: os.stat_result) -> bool:
 
 
 def clean(age_hours: int, apply_changes: bool) -> CleanupResult:
-    _, candidates = scan(age_hours)
-    result = CleanupResult(dry_run=not apply_changes)
+    scan_result, candidates = scan(age_hours)
+    result = CleanupResult(
+        dry_run=not apply_changes,
+        bytes_found=scan_result.bytes_found,
+        files_skipped=scan_result.files_skipped,
+        errors=scan_result.errors,
+    )
     for path, original in candidates:
         result.files_considered += 1
         if not apply_changes:
