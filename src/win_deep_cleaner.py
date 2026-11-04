@@ -18,7 +18,7 @@ import tempfile
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple
+from typing import Callable, Dict, Iterable, List, Optional, Sequence, Tuple
 
 APP_NAME = "WinDeepCleaner"
 DEFAULT_AGE_HOURS = 24
@@ -181,9 +181,14 @@ def stat_module():
     return stat
 
 
-def iter_candidate_files(root: Path) -> Iterable[Path]:
-    """Walk without following symlinks or Windows reparse points."""
-    for current, directories, filenames in os.walk(str(root), topdown=True, followlinks=False):
+def iter_candidate_files(
+    root: Path,
+    on_error: Optional[Callable[[OSError], None]] = None,
+) -> Iterable[Path]:
+    """Walk without following links and report inaccessible directories."""
+    for current, directories, filenames in os.walk(
+        str(root), topdown=True, followlinks=False, onerror=on_error
+    ):
         current_path = Path(current)
         safe_directories = []
         for directory in directories:
@@ -208,8 +213,12 @@ def scan(age_hours: int) -> Tuple[ScanResult, List[Tuple[Path, os.stat_result]]]
     roots = get_cleanup_roots()
     if not roots:
         raise CleanerError("No accessible user temporary directory was found.")
+    def record_walk_error(error: OSError) -> None:
+        result.errors += 1
+        LOGGER.warning("Could not traverse directory %s: %s", error.filename, error)
+
     for root in roots:
-        for path in iter_candidate_files(root):
+        for path in iter_candidate_files(root, record_walk_error):
             try:
                 info = path.lstat()
                 if not path.is_file() or info.st_mtime > cutoff:
@@ -338,7 +347,7 @@ def run_gui() -> int:
                 return
             result = clean(hours, apply_changes)
             show(
-                "{}: considered {}; found {}; deleted {}; reclaimed {}; skipped {}; errors {}.".format(
+                "{}: considered {}; found bytes {}; deleted {}; reclaimed {}; skipped {}; errors {}.".format(
                     "Cleanup" if apply_changes else "Dry run",
                     result.files_considered,
                     format_bytes(result.bytes_found),
@@ -407,7 +416,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         result = clean(args.age_hours, args.apply)
         write_report(result, args.report)
         print(
-            "{} | considered={} found={} deleted={} reclaimed={} skipped={} errors={}".format(
+            "{} | considered={} found_bytes={} deleted={} reclaimed={} skipped={} errors={}".format(
                 "DRY RUN" if result.dry_run else "CLEANUP",
                 result.files_considered,
                 format_bytes(result.bytes_found),
