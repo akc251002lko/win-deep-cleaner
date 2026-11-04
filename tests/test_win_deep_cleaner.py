@@ -8,12 +8,42 @@ import sys
 import tempfile
 import time
 import unittest
+from types import SimpleNamespace
 from unittest import mock
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 import win_deep_cleaner as cleaner  # noqa: E402
+
+
+class PlatformDetectionTests(unittest.TestCase):
+    def test_detects_windows_11(self) -> None:
+        version = SimpleNamespace(
+            major=10, minor=0, build=22631, service_pack=""
+        )
+        with mock.patch.object(cleaner.os, "name", "nt"):
+            with mock.patch.object(sys, "getwindowsversion", create=True, return_value=version):
+                info = cleaner.detect_platform()
+        self.assertEqual(info["os"], "Windows 11")
+
+    def test_requires_service_pack_one_on_windows_7(self) -> None:
+        version = SimpleNamespace(
+            major=6, minor=1, build=7600, service_pack=""
+        )
+        with mock.patch.object(cleaner.os, "name", "nt"):
+            with mock.patch.object(sys, "getwindowsversion", create=True, return_value=version):
+                with self.assertRaises(cleaner.UnsupportedPlatformError):
+                    cleaner.detect_platform()
+
+    def test_accepts_windows_7_service_pack_one(self) -> None:
+        version = SimpleNamespace(
+            major=6, minor=1, build=7601, service_pack="Service Pack 1"
+        )
+        with mock.patch.object(cleaner.os, "name", "nt"):
+            with mock.patch.object(sys, "getwindowsversion", create=True, return_value=version):
+                info = cleaner.detect_platform()
+        self.assertEqual(info["os"], "Windows 7")
 
 
 class CleanerUtilityTests(unittest.TestCase):
