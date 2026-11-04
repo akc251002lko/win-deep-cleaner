@@ -23,7 +23,12 @@ The project is designed around least privilege and predictable behaviour. It doe
 - Tkinter is required only for the GUI and is normally included with standard Windows Python installers.
 - No third-party Python packages are required.
 
-**Legacy operating-system note:** Windows 7 requires a legacy Python runtime (Python 3.8.10 was the final Python release line with official Windows 7 support). Python 3.8 is end-of-life and no longer receives security fixes. Use a supported operating system and maintained Python release wherever possible. The source compatibility target does not constitute certification on every Windows release or architecture.
+**Operating-system/runtime mapping:**
+- Windows 7 SP1 and Windows 8: Python 3.8 is the legacy runtime line; the final regular Windows installer was Python 3.8.10. Python 3.8 is end-of-life and receives no security fixes.
+- Windows 8.1: use Python 3.12 or an application package built with a compatible runtime.
+- Windows 10 and Windows 11: use a currently supported Python release. The CI matrix checks Python 3.12 and 3.14, plus the legacy Python 3.8 line.
+
+Do not expose Windows 7/8 devices to untrusted networks merely to run this utility. The source compatibility target does not constitute certification on every Windows release or architecture.
 
 ### CLI
 
@@ -71,8 +76,10 @@ Use **Scan / Dry Run** first. Select **Clean Now** only after reviewing the scop
 
 ## Safety Model
 
-- Only the current user's resolved `TEMP`, `TMP`, and Python temporary directory roots are considered.
+- Only resolved `TEMP`, `TMP`, and Python temporary directory roots inside the current user's profile are considered.
+- A candidate root must be a dedicated `Temp`/`Tmp` directory (including generated `tmp...` temporary folders); arbitrary profile folders, profile roots, drive roots, and system temporary directories are rejected.
 - Duplicate roots are removed before scanning.
+- Scan byte totals, skipped-file counts, and scan errors are preserved in CLI/GUI summaries and JSON reports.
 - Only regular files older than the configured age are eligible.
 - Symbolic links and Windows reparse points are skipped; directory traversal does not follow links.
 - Directories are never deleted.
@@ -89,11 +96,11 @@ No filesystem cleaner can guarantee that a file is safe to remove merely because
 |---|---|---|
 | Windows 7 SP1 | x86 and x64 | Legacy target; requires a compatible legacy Python runtime and real-device testing |
 | Windows 8 | x86 and x64 | Target; requires real-device testing |
-| Windows 8.1 | x86 and x64 | Target; requires real-device testing |
-| Windows 10 | x86 and x64 | Target; CI coverage is limited to hosted Windows runners |
+| Windows 8.1 | x86 and x64 | Target; Python 3.12 runtime; requires real-device testing |
+| Windows 10 | x86 and x64 | Target; maintained-runtime CI coverage is x64; x86 requires real-device testing |
 | Windows 11 | x64 | Target; CI coverage is limited to hosted Windows runners |
 
-Windows 11 does not have an officially supported 32-bit x86 edition. ARM64 is not currently claimed as a validated target. GitHub-hosted CI does not run Windows 7, Windows 8, or Windows 8.1; compatibility with those systems must be verified on dedicated test machines before a release is described as certified.
+Windows 11 does not have an officially supported 32-bit x86 edition. ARM64 is not currently claimed as a validated target. GitHub-hosted CI does not run Windows 7, Windows 8, or Windows 8.1; compatibility with those systems and Windows x86 configurations must be verified on dedicated test machines before a release is described as certified.
 
 ## Development and Tests
 
