@@ -90,6 +90,46 @@ class CleanerUtilityTests(unittest.TestCase):
             self.assertEqual(payload["files_considered"], 2)
             self.assertIn("generated_at_utc", payload)
 
+    def test_cleanup_roots_reject_arbitrary_profile_folder(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            profile = Path(temp_dir) / "profile"
+            unsafe = profile / "Documents"
+            unsafe.mkdir(parents=True)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "USERPROFILE": str(profile),
+                    "TEMP": str(unsafe),
+                    "TMP": str(unsafe),
+                },
+            ):
+                with mock.patch.object(cleaner.tempfile, "gettempdir", return_value=str(unsafe)):
+                    with self.assertRaises(cleaner.CleanerError):
+                        cleaner.get_cleanup_roots()
+
+    def test_clean_preserves_scan_diagnostics(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            candidate = Path(temp_dir) / "aged.tmp"
+            candidate.write_text("dry-run", encoding="utf-8")
+            original = candidate.lstat()
+            scan_result = cleaner.ScanResult(
+                files_found=1,
+                bytes_found=7,
+                files_skipped=2,
+                errors=1,
+            )
+            with mock.patch.object(
+                cleaner,
+                "scan",
+                return_value=(scan_result, [(candidate, original)]),
+            ):
+                result = cleaner.clean(24, apply_changes=False)
+            self.assertEqual(result.bytes_found, 7)
+            self.assertEqual(result.files_skipped, 2)
+            self.assertEqual(result.errors, 1)
+            self.assertEqual(result.files_considered, 1)
+            self.assertTrue(candidate.exists())
+
     def test_invalid_age_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             cleaner.scan(0)
