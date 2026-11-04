@@ -126,7 +126,8 @@ GitHub Actions runs these checks on a Windows runner across selected Python and 
 │   └── workflows/
 │       └── ci.yml
 ├── src/
-│   └── win_deep_cleaner.py
+│   ├── win_deep_cleaner.py
+│   └── gui.py
 ├── tests/
 │   └── test_win_deep_cleaner.py
 ├── .gitignore
